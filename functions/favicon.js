@@ -25,7 +25,6 @@ exports.handler = async (event, context) => {
 		body: base64,
 		headers: {
 			'content-length': base64.length,
-			'content-type': 'application/text',
 			'access-control-allow-origin': '*',
 		},
 	}
