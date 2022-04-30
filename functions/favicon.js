@@ -1,16 +1,30 @@
 const fetch = require('node-fetch')
-const fs = require('fs')
+
+function filterBestIcon(icons) {
+	// Always take apple-touch-icon if available
+	const appleIcons = icons.filter((icon) => icon.src.includes('apple-touch-icon'))
+
+	if (appleIcons.length > 0) {
+		return appleIcons[0].src
+	}
+
+	// If no apple-touch-icon, get biggest icon available
+	icons.sort((curr, next) => {
+		const size = (icon) => icon.sizes?.split('x')[0] || 16
+		return size(next) - size(curr)
+	})
+
+	return icons[0].src
+}
 
 exports.handler = async (event, context) => {
-	const query = event.path.replace('/favicon', '')
-	const path = 'https://main-green-spider.b-cdn.net/' + query + '/32'
-	let response, blob, buffer, base64
+	const query = event.path.replace('/favicon/', '')
+	const path = 'http://favicongrabber.com/api/grab/' + query
+	let grabber, json
 
 	try {
-		response = await fetch(path)
-		blob = await response.blob()
-		buffer = await blob.arrayBuffer()
-		base64 = 'data:image/png;base64,' + Buffer.from(String.fromCharCode(...new Uint8Array(buffer))).toString('base64')
+		grabber = await fetch(path)
+		json = await grabber.json()
 	} catch (err) {
 		return {
 			statusCode: err.statusCode || 500,
@@ -22,9 +36,8 @@ exports.handler = async (event, context) => {
 
 	return {
 		statusCode: 200,
-		body: base64,
+		body: filterBestIcon(json.icons),
 		headers: {
-			'content-length': base64.length,
 			'access-control-allow-origin': '*',
 		},
 	}
