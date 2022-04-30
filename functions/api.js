@@ -17,23 +17,31 @@ function filterBestIcon(icons) {
 		return size(next) - size(curr)
 	})
 
+	// No icon found ? Return empty string
+	if (icons.length === 0) {
+		return ''
+	}
+
 	return icons[0].src
 }
 
 exports.handler = async (event, context) => {
 	const query = event.path.replace('/api/', '')
 	const path = 'http://favicongrabber.com/api/grab/' + query
-	let grabber, json
+	let response, json
 
 	try {
-		grabber = await fetch(path)
-		json = await grabber.json()
+		response = await fetch(path)
+		json = await response.json()
 	} catch (err) {
 		return {
 			statusCode: err.statusCode || 500,
 			body: JSON.stringify({
 				error: err.message,
 			}),
+			headers: {
+				'access-control-allow-origin': '*',
+			},
 		}
 	}
 
