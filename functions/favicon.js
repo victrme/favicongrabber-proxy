@@ -1,6 +1,9 @@
 const fetch = require('node-fetch')
 
 function filterBestIcon(icons) {
+	// Removes gigantic icons
+	icons = icons.filter((i) => i.sizes === undefined || !i.sizes?.includes('512'))
+
 	// Always take apple-touch-icon if available
 	const appleIcons = icons.filter((icon) => icon.src.includes('apple-touch-icon'))
 
