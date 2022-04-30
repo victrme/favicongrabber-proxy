@@ -26,30 +26,30 @@ function filterBestIcon(icons) {
 }
 
 exports.handler = async (event, context) => {
-	const query = event.path.replace('/api/', '')
+	const query = event.path.replace('/api/', '').replace(/^[^.]+\./g, '') // removes subdomain
 	const path = 'http://favicongrabber.com/api/grab/' + query
-	let response, json
+	let iconString = ''
 
 	try {
-		response = await fetch(path)
-		json = await response.json()
+		const response = await fetch(path)
+
+		if (response.status === 200) {
+			const json = await response.json()
+			iconString = filterBestIcon(json.icons)
+		}
 	} catch (err) {
 		return {
 			statusCode: err.statusCode || 500,
 			body: JSON.stringify({
 				error: err.message,
 			}),
-			headers: {
-				'access-control-allow-origin': '*',
-			},
+			headers: { 'access-control-allow-origin': '*' },
 		}
 	}
 
 	return {
 		statusCode: 200,
-		body: filterBestIcon(json.icons),
-		headers: {
-			'access-control-allow-origin': '*',
-		},
+		body: iconString,
+		headers: { 'access-control-allow-origin': '*' },
 	}
 }
