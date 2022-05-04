@@ -26,12 +26,20 @@ function filterBestIcon(icons) {
 }
 
 exports.handler = async (event, context) => {
-	const query = event.path.replace('/api/', '').replace(/^[^.]+\./g, '') // removes subdomain
+	let query = event.path.replace('/api/', '')
+	const hasSubDomain = query.split('.').length > 2
+
+	if (hasSubDomain) {
+		query = query.replace(/^[^.]+\./g, '') // removes subdomain
+	}
+
 	const path = 'http://favicongrabber.com/api/grab/' + query
 	let iconString = ''
 
 	try {
 		const response = await fetch(path)
+
+		console.log(response)
 
 		if (response.status === 200) {
 			const json = await response.json()
@@ -43,13 +51,17 @@ exports.handler = async (event, context) => {
 			body: JSON.stringify({
 				error: err.message,
 			}),
-			headers: { 'access-control-allow-origin': '*' },
+			headers: {
+				'access-control-allow-origin': '*',
+			},
 		}
 	}
 
 	return {
 		statusCode: 200,
 		body: iconString,
-		headers: { 'access-control-allow-origin': '*' },
+		headers: {
+			'access-control-allow-origin': '*',
+		},
 	}
 }
