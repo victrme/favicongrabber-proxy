@@ -25,25 +25,36 @@ function filterBestIcon(icons) {
 	return icons[0].src
 }
 
-exports.handler = async (event, context) => {
-	let query = event.path.replace('/api/', '')
-	const hasSubDomain = query.split('.').length > 2
+async function getFavicongrabber(url) {
+	const resp = await fetch(url)
 
-	if (hasSubDomain) {
-		query = query.replace(/^[^.]+\./g, '') // removes subdomain
+	if (resp.status === 200) {
+		const json = await resp.json()
+		return json
 	}
 
-	const path = 'http://favicongrabber.com/api/grab/' + query
-	let iconString = ''
+	return false
+}
+
+exports.handler = async (event, context) => {
+	const path = 'http://favicongrabber.com/api/grab/'
+	let query = event.path.replace('/api/', '')
+	let hasSubDomain = query.split('.').length > 2
+	let iconURL = ''
 
 	try {
-		const response = await fetch(path)
+		// Try to get favicon json
+		let json = await getFavicongrabber(path + query)
 
-		console.log(response)
+		// No json with a subdoamin, try with top-level domain
+		if (!json && hasSubDomain) {
+			query = query.replace(/^[^.]+\./g, '') // removes subdomain
+			json = await getFavicongrabber(path + query)
+		}
 
-		if (response.status === 200) {
-			const json = await response.json()
-			iconString = filterBestIcon(json.icons)
+		// Json found: filter icon, if not: iconURL is still an empty string
+		if (json.icons) {
+			iconURL = filterBestIcon(json.icons)
 		}
 	} catch (err) {
 		return {
@@ -59,7 +70,7 @@ exports.handler = async (event, context) => {
 
 	return {
 		statusCode: 200,
-		body: iconString,
+		body: iconURL,
 		headers: {
 			'access-control-allow-origin': '*',
 		},
